@@ -80,6 +80,8 @@ int main(void)
         fixture.values = @{};
         expect([[NSURLResponse alloc] initWithCoder:fixture] == nil, @"missing URL rejects base response");
         expect([[NSHTTPURLResponse alloc] initWithCoder:fixture] == nil, @"missing URL rejects HTTP response");
+        expect([[NSCachedURLResponse alloc] initWithResponse:nil data:[NSData data]] == nil, @"rejected decoded response cannot enter cache");
+        expect([[NSCachedURLResponse alloc] initWithResponse:http data:nil] == nil, @"missing cached data rejects initialization");
     }
     if (!failures) NSLog(@"PASS: nsurlresponse-coding");
     return failures ? 1 : 0;
