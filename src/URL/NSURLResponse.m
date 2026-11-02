@@ -8,6 +8,9 @@
 #import "NSURLResponseInternal.h"
 #import <Foundation/NSString.h>
 #import <Foundation/NSDictionary.h>
+#import <Foundation/NSCoder.h>
+#import <Foundation/NSSet.h>
+#import <Foundation/NSURL.h>
 
 @implementation NSURLResponseInternal
 
@@ -57,17 +60,28 @@
 
 - (id)initWithCoder:(NSCoder *)coder
 {
-    self = [super init];
-    if (self)
+    NSURL *url = [coder decodeObjectOfClass:[NSURL class] forKey:@"NS.url"];
+    if (url == nil)
     {
-
+        [self release];
+        return nil;
     }
+    CFURLResponseRef response = CFURLResponseCreate(kCFAllocatorDefault, (CFURLRef)url,
+        (CFStringRef)[coder decodeObjectOfClass:[NSString class] forKey:@"NS.mimeType"],
+        [coder decodeInt64ForKey:@"NS.expectedContentLength"],
+        (CFStringRef)[coder decodeObjectOfClass:[NSString class] forKey:@"NS.textEncodingName"]);
+    self = [self _initWithCFURLResponse:response];
+    CFRelease(response);
     return self;
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
 {
-
+    [coder encodeObject:[self URL] forKey:@"NS.url"];
+    [coder encodeObject:[self MIMEType] forKey:@"NS.mimeType"];
+    [coder encodeInt64:[self expectedContentLength] forKey:@"NS.expectedContentLength"];
+    [coder encodeObject:[self textEncodingName] forKey:@"NS.textEncodingName"];
+    [coder encodeObject:[self suggestedFilename] forKey:@"NS.suggestedFilename"];
 }
 
 - (id)_initWithCFURLResponse:(CFURLResponseRef)response
@@ -182,12 +196,23 @@ static inline NSString *NSURLLocalizedString(NSString *key)
 
 - (id)initWithCoder:(NSCoder *)coder
 {
-    self = [super initWithCoder:coder];
-    if (self)
+    NSURL *url = [coder decodeObjectOfClass:[NSURL class] forKey:@"NS.url"];
+    if (url == nil)
     {
-
+        [self release];
+        return nil;
     }
-    return self;
+    NSSet *classes = [NSSet setWithObjects:[NSDictionary class], [NSString class], nil];
+    NSDictionary *fields = [coder decodeObjectOfClasses:classes forKey:@"NS.allHeaderFields"];
+    return [self initWithURL:url statusCode:[coder decodeIntegerForKey:@"NS.statusCode"]
+                HTTPVersion:(NSString *)kCFHTTPVersion1_1 headerFields:fields];
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+    [super encodeWithCoder:coder];
+    [coder encodeInteger:[self statusCode] forKey:@"NS.statusCode"];
+    [coder encodeObject:[self allHeaderFields] forKey:@"NS.allHeaderFields"];
 }
 
 - (id)initWithURL:(NSURL *)URL statusCode:(NSInteger)statusCode HTTPVersion:(NSString *)version headerFields:(NSDictionary *)fields
