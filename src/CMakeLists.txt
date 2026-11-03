@@ -19,6 +19,7 @@ add_compile_definitions(
 )
 
 include_directories(
+	${CMAKE_SOURCE_DIR}/src/include
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/SharedCode
 	${CMAKE_CURRENT_SOURCE_DIR}/Proxies

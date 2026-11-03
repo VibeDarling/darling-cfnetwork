@@ -5,6 +5,7 @@
 //  Copyright (c) 2014 Apportable. All rights reserved.
 //
 
+#include <darling-boundary-diagnostics.h>
 #import <Foundation/NSURLSession.h>
 #import <Foundation/NSHTTPCookieStorage.h>
 #import <Foundation/NSURLCache.h>
@@ -44,7 +45,10 @@ static const NSInteger kDefaultMaximumConnectionsPerHost = 6;
 
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id <NSURLSessionDelegate>)delegate delegateQueue:(NSOperationQueue *)queue
 {
-    return [[[__NSCFURLSession alloc] initWithConfiguration:configuration delegate:delegate delegateQueue:queue] autorelease];
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.create.enter\n", sizeof("foundation.session.create.enter\n") - 1);
+    NSURLSession *result = [[[__NSCFURLSession alloc] initWithConfiguration:configuration delegate:delegate delegateQueue:queue] autorelease];
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.create.return\n", sizeof("foundation.session.create.return\n") - 1);
+    return result;
 }
 
 @end
@@ -84,11 +88,14 @@ static const NSInteger kDefaultMaximumConnectionsPerHost = 6;
 
 + (NSURLSessionConfiguration *)defaultSessionConfiguration
 {
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.default-config.enter\n", sizeof("foundation.session.default-config.enter\n") - 1);
     __NSCFURLSessionConfiguration *configuration = [[__NSCFURLSessionConfiguration alloc] init];
     // URLCredentialStorage stays nil: Darling's NSURLCredentialStorage has no shared store.
     [configuration setHTTPCookieStorage:[NSHTTPCookieStorage sharedHTTPCookieStorage]];
     [configuration setURLCache:[NSURLCache sharedURLCache]];
-    return [configuration autorelease];
+    NSURLSessionConfiguration *result = [configuration autorelease];
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.default-config.return\n", sizeof("foundation.session.default-config.return\n") - 1);
+    return result;
 }
 
 // No persistent cookie, credential or cache store. Sessions do not use these

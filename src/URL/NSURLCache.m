@@ -5,6 +5,7 @@
 //  Copyright (c) 2014 Apportable. All rights reserved.
 //
 
+#include <darling-boundary-diagnostics.h>
 #import "NSURLCacheInternal.h"
 #import "NSURLResponseInternal.h"
 #import "NSURLRequestInternal.h"
@@ -167,6 +168,7 @@ static Boolean sharedURLCacheSet = false;
 
 - (id)initWithMemoryCapacity:(NSUInteger)memoryCapacity diskCapacity:(NSUInteger)diskCapacity diskPath:(NSString*)path
 {
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.cache.init.enter\n", sizeof("foundation.cache.init.enter\n") - 1);
     // Calculate full path for the cache.
     NSString* cachePath;
     {
@@ -195,6 +197,7 @@ static Boolean sharedURLCacheSet = false;
     CFURLCacheRef cache = CFURLCacheCreate(kCFAllocatorDefault, memoryCapacity, diskCapacity, (CFStringRef)cachePath);
     if (!cache) {
         [self release];
+        darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.cache.init.return\n", sizeof("foundation.cache.init.return\n") - 1);
         return nil;
     }
 
@@ -203,6 +206,7 @@ static Boolean sharedURLCacheSet = false;
         _CFURLCacheSetNSCache(cache, self);
     }
     CFRelease(cache);
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.cache.init.return\n", sizeof("foundation.cache.init.return\n") - 1);
     return self;
 }
 
@@ -260,7 +264,9 @@ static Boolean sharedURLCacheSet = false;
 
 - (void)setDiskCapacity:(NSUInteger)capacity
 {
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.cache.disk-capacity.enter\n", sizeof("foundation.cache.disk-capacity.enter\n") - 1);
     _CFURLCacheSetDiskCapacity(_cacheRef, capacity);
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.cache.disk-capacity.return\n", sizeof("foundation.cache.disk-capacity.return\n") - 1);
 }
 
 - (void)_cf_setDiskCapacity:(NSUInteger)capacity
