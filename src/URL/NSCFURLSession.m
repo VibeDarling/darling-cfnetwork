@@ -10,6 +10,7 @@
 //  Library Exception).
 //
 
+#include <darling-boundary-diagnostics.h>
 #import "NSCFURLSession.h"
 #import "NSURLSessionCurl.h"
 #import "NSURLRequestInternal.h"
@@ -151,12 +152,14 @@ static void deliverMetrics(__NSCFURLSession *session, NSURLSessionTask *task, NS
 
 - (void)setSessionDescription:(NSString *)description
 {
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.description.enter\n", sizeof("foundation.session.description.enter\n") - 1);
     NSString *copy = [description copy];
     [_lock lock];
     NSString *old = _sessionDescription;
     _sessionDescription = copy;
     [_lock unlock];
     [old release];
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.description.return\n", sizeof("foundation.session.description.return\n") - 1);
 }
 
 - (void)_addDelegateBlock:(void (^)(void))block
@@ -330,8 +333,11 @@ static void deliverMetrics(__NSCFURLSession *session, NSURLSessionTask *task, NS
 
 - (void)invalidateAndCancel
 {
-    if (_isSharedSession)
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.invalidate.enter\n", sizeof("foundation.session.invalidate.enter\n") - 1);
+    if (_isSharedSession) {
+        darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.invalidate.return\n", sizeof("foundation.session.invalidate.return\n") - 1);
         return;
+    }
     [_lock lock];
     BOOL deliver = [self _invalidateLocked];
     NSArray *tasks = [_tasks allObjects];
@@ -340,6 +346,7 @@ static void deliverMetrics(__NSCFURLSession *session, NSURLSessionTask *task, NS
         [task cancel];
     if (deliver)
         [self _deliverInvalidation];
+    darling_diagnostic_send(getenv("DARLING_BOUNDARY_SOCKET"), "foundation.session.invalidate.return\n", sizeof("foundation.session.invalidate.return\n") - 1);
 }
 
 // Called on the delegate queue after the task's last callback.
